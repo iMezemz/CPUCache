@@ -68,3 +68,35 @@ splitEvery(N, List,[H|T]):- append(H, L2, List),
 							length(H, N),
 							splitEvery(N, L2, T).
 %\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+
+%getDataFromCache(StringAddress, Cache, Data, HopsNum, setAssoc, SetsNum)
+
+
+getDataFromCache(StringAddress, [item(_, data(D), 0, _)|T], _, _, setAssoc, SetsNum):- 
+																	getDataFromCache(StringAddress, T, Data, HopsNum, SetAssoc, SetsNum).
+																	
+getDataFromCache(StringAddress, [item(tag(StringTag), data(Data), 1, Order)|T], Data, HopsNum, setAssoc, SetsNum):- logBase2(SetsNum, IdxBits),
+																													number_string(BinAddress, StringAddress),
+																													DivR is (1 * (10 ^ IdxBits)),
+																													Idx is BinAddress mod DivR,
+																													Tag is div(BinAddress, DivR),
+																													number_string(Tag, StringTag).
+																													
+																														
+
+
+%-----------------------------------------------------------
+
+%convertAddress(Bin, SetsNum, Tag, Idx, setAssoc).
+
+convertAddress(Bin, SetsNum, Tag, Idx, setAssoc):-  logBase2(SetsNum, IdxBits),
+													DivR is (1 * (10 ^ IdxBits)),
+													Idx is Bin mod DivR,
+													Tag is div(Bin, DivR).
+													
+
+%-----------------------------------------------------------																	
+																	
+
+%getDataFromCache("000001",[item(tag("00000"), data(11100), 0, 3),item(tag("00000"), data(11110), 0, 2),item(tag("0000"), data(10000), 0, 1),item(tag("00000"), data(11000), 1, 0)],Data, HopsNum, setAssoc,2).
