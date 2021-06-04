@@ -73,27 +73,6 @@ splitEvery(N, List,[H|T]):- append(H, L2, List),
 
 %replaceInCache/8
 
-%Set Associative
-replaceInCache(Tag,Idx,Mem,OldCache,NewCache,ItemData,setAssoc,SetsNum):-
-        atom_number(TagString,Tag),atom_number(IdxString,Idx),
-        splitEvery(SetsNum,OldCache,SplittedCache),
-        convertBinToDec(Idx,IndexDecimal),
-        replaceIthItem(Set,SplittedCache,IndexDecimal,SplittedCache),
-        string_concat(TagString,IdxString,FullyAssocTagString),
-        atom_number(FullyAssocTagString,FullyAssocTag),
-        convertBinToDec(FullyAssocTag,FullyAssocTagDecimal),
-        % replaceIthItem(ItemData,Mem,FullyAssocTagDecimal,Mem),
-        replaceInCache(FullyAssocTag,_,Mem,Set,NewSet,ItemData,fullyAssoc,_),
-        string_length(ItemData,L1),
-        getNumBits(SetsNum,setAssoc,OldCache,L2),
-        string_length(TagString,L3),
-        L4 is L1 - L3 - L2,
-        fillZeros(TagString,L4,TagInsert),
-        replaceIthItem(NewSet,SplittedCache,IndexDecimal,FinalSplittedCache),
-        flatten(FinalSplittedCache,FinalCache),
-        firstOccurence(item(_,data(ItemData),1,0),TagEditIndex,FinalCache),
-        replaceIthItem(item(tag(TagInsert),data(ItemData),1,0),FinalCache,TagEditIndex,NewCache).
-
 %Direct Mapping
 replaceInCache(Tag,Idx,Mem,OldCache,NewCache,ItemData,directMap,BitsNum):- 
     atom_number(TagString,Tag),atom_number(IdxString,Idx),
@@ -101,10 +80,10 @@ replaceInCache(Tag,Idx,Mem,OldCache,NewCache,ItemData,directMap,BitsNum):-
     atom_number(StringAddress,Address),
     convertBinToDec(Address,AddressDecimal),
     replaceIthItem(ItemData,Mem,AddressDecimal,Mem),
-    string_length(TagString,L1),
-    string_length(ItemData,L2),
-    L3 is L2 - L1 - BitsNum,
-    fillZeros(TagString,L3,TagInsert),
+    string_length(TagString,ActualTagLength),
+    string_length(ItemData,AddressLength),
+    AddedZeros is AddressLength - ActualTagLength - BitsNum,
+    fillZeros(TagString,AddedZeros,TagInsert),
     convertBinToDec(Idx,IdxDecimal),            
     replaceIthItem(item(tag(TagInsert),data(ItemData),1,0),OldCache,IdxDecimal,NewCache).
 
@@ -113,10 +92,10 @@ replaceInCache(Tag,_,Mem,OldCache,NewCache,ItemData,fullyAssoc,_):-
     atom_number(TagString,Tag),
     convertBinToDec(Tag,AddressDecimal),
     replaceIthItem(ItemData,Mem,AddressDecimal,Mem),
-    string_length(TagString,L1),
-    string_length(ItemData,L2),
-    L3 is L2 - L1,
-    fillZeros(TagString,L3,TagInsert),
+    string_length(TagString,ActualTagLength),
+    string_length(ItemData,AddressLength),
+    AddedZeros is AddressLength - ActualTagLength,
+    fillZeros(TagString,AddedZeros,TagInsert),
     incrementAll(OldCache,IncrementedCache),
     firstOccurence(item(_,_,0,_),Index,IncrementedCache),
     replaceIthItem(item(tag(TagInsert),data(ItemData),1,0),IncrementedCache,Index,NewCache).
@@ -127,14 +106,57 @@ replaceInCache(Tag,_,Mem,OldCache,NewCache,ItemData,fullyAssoc,_):-
     atom_number(TagString,Tag),
     convertBinToDec(Tag,AddressDecimal),
     replaceIthItem(ItemData,Mem,AddressDecimal,Mem),
-    string_length(TagString,L1),
-    string_length(ItemData,L2),
-    L3 is L2 - L1,
-    fillZeros(TagString,L3,TagInsert),
+    string_length(TagString,ActualTagLength),
+    string_length(ItemData,AddressLength),
+    AddedZeros is AddressLength - ActualTagLength,
+    fillZeros(TagString,AddedZeros,TagInsert),
     highestOrder(OldCache,MaxOrder),
     incrementAll(OldCache,IncrementedCache),
     firstOccurence(item(_,_,1,MaxOrder),Index,OldCache),
     replaceIthItem(item(tag(TagInsert),data(ItemData),1,0),IncrementedCache,Index,NewCache).
+%Set Associative
+replaceInCache(Tag,Idx,Mem,OldCache,NewCache,ItemData,setAssoc,SetsNum):-
+    %Obtained Data from Memory, Tag and index are now available as strings as well as binary numbers
+    atom_number(TagString,Tag),atom_number(IdxString,Idx),
+    string_concat(TagString,IdxString,StringAddress),atom_number(StringAddress,Address),
+    convertBinToDec(Address,AddressDecimal),replaceIthItem(ItemData,Mem,AddressDecimal,Mem),
+    %Split the Old Cache to Select a certain set in the cache
+    splitEvery(SetsNum,OldCache,OldSplittedCache),
+    %find the set on which to apply the fully associative poilicy on
+    convertBinToDec(Idx,SetIndex),
+    replaceIthItem(WorkingSet,OldSplittedCache,SetIndex,OldSplittedCache),
+    %Find the first empty slot inside the working set
+    firstOccurence(item(_,_,0,_),ReplacingIndex,WorkingSet),
+    %Make the tag ready for insertion(by adding zeros)
+    string_length(ItemData,AddressLength),string_length(TagString,ActualTagLength),
+    getNumBits(SetsNum,setAssoc,OldCache,IndexLength), AddedZeros is AddressLength - IndexLength - ActualTagLength,
+    fillZeros(TagString,AddedZeros,TagInsert),incrementAll(WorkingSet,IncrementedSet),
+    replaceIthItem(item(tag(TagInsert),data(ItemData),1,0),IncrementedSet,ReplacingIndex,SetInsert),
+    replaceIthItem(SetInsert,OldSplittedCache,SetIndex,NewSplittedCache),flatten(NewSplittedCache,NewCache).
+
+replaceInCache(Tag,Idx,Mem,OldCache,NewCache,ItemData,setAssoc,SetsNum):-
+    %Obtained Data from Memory, Tag and index are now available as strings as well as binary numbers
+    atom_number(TagString,Tag),atom_number(IdxString,Idx),
+    string_concat(TagString,IdxString,StringAddress),atom_number(StringAddress,Address),
+    convertBinToDec(Address,AddressDecimal),replaceIthItem(ItemData,Mem,AddressDecimal,Mem),
+    %Split the Old Cache to Select a certain set in the cache
+    splitEvery(SetsNum,OldCache,OldSplittedCache),
+    %find the set on which to apply the fully associative poilicy on
+    convertBinToDec(Idx,SetIndex),
+    replaceIthItem(WorkingSet,OldSplittedCache,SetIndex,OldSplittedCache),
+    %Find the first empty slot inside the working set
+    \+firstOccurence(item(_,_,0,_),_,WorkingSet),
+    highestOrder(WorkingSet,MaxOrder),
+    firstOccurence(item(_,_,1,MaxOrder),ReplacingIndex,WorkingSet),
+    %Make the tag ready for insertion(by adding zeros)
+    string_length(ItemData,AddressLength),string_length(TagString,ActualTagLength),
+    getNumBits(SetsNum,setAssoc,OldCache,IndexLength), AddedZeros is AddressLength - IndexLength - ActualTagLength,
+    fillZeros(TagString,AddedZeros,TagInsert),incrementAll(WorkingSet,IncrementedSet),
+    replaceIthItem(item(tag(TagInsert),data(ItemData),1,0),IncrementedSet,ReplacingIndex,SetInsert),
+    replaceIthItem(SetInsert,OldSplittedCache,SetIndex,NewSplittedCache),flatten(NewSplittedCache,NewCache).
+
+
+
 
 %Helper Methods for Fully Associative ReplaceInCache
 %------------------------------------------------------------------------
@@ -159,21 +181,10 @@ firstOccurence(Item,Index,[H|T]):-                                      %\
 highestOrder([H|T],MaxOrder):- highestOrderHelp([H|T],0,MaxOrder).      %\
 highestOrderHelp([],Max,Max).                                           %\
 highestOrderHelp([item(_,_,1,O)|T],Acc,Max):-                           %\
-                        Acc>O,                                          %\
+                        Acc>=O,                                         %\
                         highestOrderHelp(T,Acc,Max).                    %\
 highestOrderHelp([item(_,_,1,O)|T],Acc,Max):-                           %\
                         Acc<O,                                          %\
                         NewAcc = O,                                     %\
                         highestOrderHelp(T,NewAcc,Max).                 %\          
 %------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
