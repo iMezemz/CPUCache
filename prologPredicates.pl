@@ -199,10 +199,16 @@ convertAddress(Bin, SetsNum, Tag, Idx, setAssoc):-  logBase2(SetsNum, IdxBits),
 													
 
 %------------------------------------------------------------																
-																	
+%getDataFromCache(StringAddress,Cache,Data,Data,setAssoc,SetsNum).
+
+getDataFromCache(StringAddress,Cache,Data,Idx,setAssoc,SetsNum):-
+    getNumBits(SetsNum,setAssoc,Cache,IdxBits),																											
+    string_length(StringAddress, L),
+    L1 is L-IdxBits,
+    sub_string(StringAddress, L1 , IdxBits, _ , IdxString),
+    sub_string(StringAddress, 0, L1, _, StringTag),
+    number_string(Idx, IdxString),
+    splitEvery(SetsNum, Cache, SplittedCache),
+    nth0(Idx,SplittedCache,WorkingSet),
+    nth0(_,WorkingSet,item(tag(StringTag),data(Data),1,_)).																	
 %///////////////////////////////////////////////////////////////////////////////
-%getDataFromCache("000000",[item(tag("00000"),data("10000"),1,1), item(tag("00001"),data("11000"),1,0),item(tag("00010"),data("11100"),0,3),item(tag("00000"),data("11110"),1,0)],Data,HopsNum,setAssoc,2).
-
-
-
-
