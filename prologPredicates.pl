@@ -59,9 +59,9 @@ repHelper(Item, [_|T], I, [Item|Ta]):-  I == 0,I1 is I-1, repHelper(Item, T, I1,
 
 replaceIthItem(Item, List, Index, Result):- repHelper(Item, List, Index, Result).
 
-%-----------------------------------------------------------
+%-------------------------------------------------------------
 
-%splitevery(N, List, Res).
+%splitEvery(N, List, Res).
 
 splitEvery(_, [], []).
 splitEvery(N, List,[H|T]):- append(H, L2, List), 
@@ -188,3 +188,21 @@ highestOrderHelp([item(_,_,1,O)|T],Acc,Max):-                           %\
                         NewAcc = O,                                     %\
                         highestOrderHelp(T,NewAcc,Max).                 %\          
 %------------------------------------------------------------------------
+%//////////////////////////////////////////////////////////////////////////////
+
+%convertAddress(Bin, SetsNum, Tag, Idx, setAssoc).
+
+convertAddress(Bin, SetsNum, Tag, Idx, setAssoc):-  logBase2(SetsNum, IdxBits),
+													DivR is (1 * (10 ^ IdxBits)),
+													Idx is Bin mod DivR,
+													Tag is div(Bin, DivR).
+													
+
+%------------------------------------------------------------																
+																	
+%///////////////////////////////////////////////////////////////////////////////
+%getDataFromCache("000000",[item(tag("00000"),data("10000"),1,1), item(tag("00001"),data("11000"),1,0),item(tag("00010"),data("11100"),0,3),item(tag("00000"),data("11110"),1,0)],Data,HopsNum,setAssoc,2).
+
+
+
+
