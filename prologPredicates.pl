@@ -212,3 +212,36 @@ getDataFromCache(StringAddress,Cache,Data,Idx,setAssoc,SetsNum):-
     nth0(Idx,SplittedCache,WorkingSet),
     nth0(_,WorkingSet,item(tag(StringTag),data(Data),1,_)).																	
 %///////////////////////////////////////////////////////////////////////////////
+getDataFromCache(StringAddress,Cache,Data,0,directMap,BitsNum):- 
+    string_length(StringAddress, L),
+    L1 is L - BitsNum, 
+    sub_string(StringAddress, 0, L1, _ , StringTag),
+    sub_string(StringAddress, L1, BitsNum, _, StringIdx),
+    atom_number(StringIdx,BinaryIndex),
+    convertBinToDec(BinaryIndex,DecimalIdx),
+    nth0(DecimalIdx,Cache,item(tag(StringTag),data(Data),1,_)).
+%///////////////////////////////////////////////////////////////////////////////
+convertAddress(Bin,BitsNum,Tag,Idx,directMap) :- 
+	DivR is (1 * (10 ^ BitsNum),
+	Idx is Bin mod DivR,
+	Tag is div(Bin, DivR).
+%///////////////////////////////////////////////////////////////////////////////
+getData(StringAddress,OldCache,Mem,NewCache,Data,HopsNum,Type,BitsNum,hit):-
+    getDataFromCache(StringAddress,OldCache,Data,HopsNum,Type,BitsNum),
+    NewCache = OldCache.
+    getData(StringAddress,OldCache,Mem,NewCache,Data,HopsNum,Type,BitsNum,miss):-
+    \+getDataFromCache(StringAddress,OldCache,Data,HopsNum,Type,BitsNum),
+    atom_number(StringAddress,Address),
+    convertAddress(Address,BitsNum,Tag,Idx,Type),
+    replaceInCache(Tag,Idx,Mem,OldCache,NewCache,Data,Type,BitsNum).
+%///////////////////////////////////////////////////////////////////////////////
+runProgram([],OldCache,_,OldCache,[],[],Type,_).
+runProgram([Address|AdressList],OldCache,Mem,FinalCache,
+[Data|OutputDataList],[Status|StatusList],Type,NumOfSets):-
+getNumBits(NumOfSets,Type,OldCache,BitsNum),
+getData(Address,OldCache,Mem,NewCache,Data,HopsNum,Type,BitsNum,Status),
+runProgram(AdressList,NewCache,Mem,FinalCache,OutputDataList,StatusList,
+Type,NumOfSets).
+%///////////////////////////////////////////////////////////////////////////////
+%///////////////////////////////////////////////////////////////////////////////
+%///////////////////////////////////////////////////////////////////////////////
