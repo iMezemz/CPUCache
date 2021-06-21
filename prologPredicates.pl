@@ -222,7 +222,7 @@ getDataFromCache(StringAddress,Cache,Data,0,directMap,BitsNum):-
     nth0(DecimalIdx,Cache,item(tag(StringTag),data(Data),1,_)).
 %///////////////////////////////////////////////////////////////////////////////
 convertAddress(Bin,BitsNum,Tag,Idx,directMap) :- 
-	DivR is (1 * (10 ^ BitsNum),
+	DivR is (10 ^ BitsNum),
 	Idx is Bin mod DivR,
 	Tag is div(Bin, DivR).
 %///////////////////////////////////////////////////////////////////////////////
@@ -236,12 +236,10 @@ getData(StringAddress,OldCache,Mem,NewCache,Data,HopsNum,Type,BitsNum,hit):-
     replaceInCache(Tag,Idx,Mem,OldCache,NewCache,Data,Type,BitsNum).
 %///////////////////////////////////////////////////////////////////////////////
 runProgram([],OldCache,_,OldCache,[],[],Type,_).
-runProgram([Address|AdressList],OldCache,Mem,FinalCache,
-[Data|OutputDataList],[Status|StatusList],Type,NumOfSets):-
+runProgram([Address|AdressList],OldCache,Mem,FinalCache,[Data|OutputDataList],[Status|StatusList],Type,NumOfSets):-
 getNumBits(NumOfSets,Type,OldCache,BitsNum),
 getData(Address,OldCache,Mem,NewCache,Data,HopsNum,Type,BitsNum,Status),
-runProgram(AdressList,NewCache,Mem,FinalCache,OutputDataList,StatusList,
-Type,NumOfSets).
+runProgram(AdressList,NewCache,Mem,FinalCache,OutputDataList,StatusList,Type,NumOfSets).
 %///////////////////////////////////////////////////////////////////////////////
 %///////////////////////////////////////////////////////////////////////////////
 %///////////////////////////////////////////////////////////////////////////////
